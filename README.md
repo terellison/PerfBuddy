@@ -26,6 +26,22 @@ the full design.
 
 ---
 
+## Download
+
+Prebuilt command-line binaries for **Linux**, **macOS**, and **Windows** are
+attached to every [GitHub Release](https://github.com/terellison/PerfBuddy/releases).
+Grab the archive for your platform, unpack it, and run the tools from `bin/`:
+
+```bash
+tar -xzf perfbuddy-v0.1.0-linux-x86_64.tar.gz
+./bin/perfbuddy list
+```
+
+The release archives contain the CLI tools only. The optional Qt6 GUI is not
+distributed — [build it from source](#gui) if you want it.
+
+---
+
 ## Build
 
 Requires **CMake ≥ 3.16** and a **C++17** compiler. Qt6 is optional (GUI only).
