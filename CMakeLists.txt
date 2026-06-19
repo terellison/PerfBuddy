@@ -63,4 +63,20 @@ if(PERFBUDDY_BUILD_TESTS)
   add_subdirectory(tests)
 endif()
 
+# ---------------------------------------------------------------------------
+# Install rules — `cmake --install <build> --prefix <dir>` lays the CLI tools
+# out under <dir>/bin. This is what the release workflow packages into the
+# downloadable archives. The GUI is intentionally excluded: shipping it needs
+# platform-specific Qt deployment (windeployqt / macdeployqt / linuxdeploy),
+# which the CLI archives don't require.
+# ---------------------------------------------------------------------------
+install(TARGETS
+          perfbuddy
+          pb-binary
+          pb-runtime
+          pb-memory
+          pb-code
+          pb-unreal
+        RUNTIME DESTINATION bin)
+
 message(STATUS "PerfBuddy configured. Binaries: pb-binary pb-runtime pb-memory pb-code pb-unreal perfbuddy")
