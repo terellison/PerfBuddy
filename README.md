@@ -45,6 +45,28 @@ Binaries land under `build/modules/*/` (and `build/gui/` for the GUI).
 
 ---
 
+## Tests
+
+Unit tests build by default (`PERFBUDDY_BUILD_TESTS`, `ON`) and run via CTest —
+no third-party test framework, just a small header-only harness under `tests/`.
+
+```bash
+cmake -S . -B build
+cmake --build build -j
+cd build && ctest --output-on-failure
+```
+
+To skip building tests entirely: `cmake -S . -B build -DPERFBUDDY_BUILD_TESTS=OFF`.
+
+Each module has its own test binary (`pb_core_test`, `pb_code_test`,
+`pb_unreal_test`, `pb_app_test`) under `build/tests/`, runnable directly too:
+
+```bash
+./build/tests/pb_unreal_test
+```
+
+---
+
 ## Quick start (with the bundled sample)
 
 ```bash
