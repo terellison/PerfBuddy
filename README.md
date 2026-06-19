@@ -1,5 +1,7 @@
 # PerfBuddy
 
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+
 A suite of C++ tools that analyze a game's **executable** and **codebase** and
 suggest concrete improvements to **binary size**, **runtime performance**,
 **memory management**, **code quality**, and **Unreal Engine** assets/config.
