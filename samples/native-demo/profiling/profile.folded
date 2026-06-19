@@ -1,0 +1,10 @@
+main;GameLoop;Render;DrawCalls;SubmitGPU 4200
+main;GameLoop;Render;CullScene 1800
+main;GameLoop;Physics;Integrate;SolveConstraints 3100
+main;GameLoop;Physics;BroadPhase 900
+main;GameLoop;AI;Pathfind;AStar 2600
+main;GameLoop;AI;BehaviorTree 700
+main;GameLoop;Audio;Mix 400
+main;GameLoop;Update;ParticleSim 1500
+main;GameLoop;Update;Animation 1100
+main;GameLoop;Render;PostProcess;Bloom 800

@@ -1,0 +1,9 @@
+{
+  "FileVersion": 3,
+  "EngineAssociation": "5.3",
+  "Category": "",
+  "Description": "PerfBuddy Unreal sample project",
+  "Modules": [
+    { "Name": "MyGame", "Type": "Runtime", "LoadingPhase": "Default" }
+  ]
+}
