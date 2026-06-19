@@ -59,4 +59,8 @@ if(PERFBUDDY_BUILD_GUI)
   endif()
 endif()
 
+if(PERFBUDDY_BUILD_TESTS)
+  add_subdirectory(tests)
+endif()
+
 message(STATUS "PerfBuddy configured. Binaries: pb-binary pb-runtime pb-memory pb-code pb-unreal perfbuddy")
