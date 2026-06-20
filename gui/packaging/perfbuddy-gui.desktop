@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=PerfBuddy
+GenericName=Game Performance Analyzer
+Comment=Analyze a game's executable and codebase for performance and quality improvements
+Exec=perfbuddy-gui
+Icon=perfbuddy-gui
+Categories=Development;Profiling;
+Terminal=false

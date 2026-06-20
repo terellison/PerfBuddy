@@ -28,17 +28,28 @@ the full design.
 
 ## Download
 
-Prebuilt command-line binaries for **Linux**, **macOS**, and **Windows** are
-attached to every [GitHub Release](https://github.com/terellison/PerfBuddy/releases).
-Grab the archive for your platform, unpack it, and run the tools from `bin/`:
+Prebuilt binaries for **Linux**, **macOS**, and **Windows** are attached to
+every [GitHub Release](https://github.com/terellison/PerfBuddy/releases). Each
+archive bundles the CLI tools **and** the desktop GUI with its Qt runtime, so
+nothing else needs to be installed.
 
 ```bash
 tar -xzf perfbuddy-v0.1.0-linux-x86_64.tar.gz
-./bin/perfbuddy list
+./bin/perfbuddy list                       # CLI
+./perfbuddy-gui-linux-x86_64.AppImage      # GUI
 ```
 
-The release archives contain the CLI tools only. The optional Qt6 GUI is not
-distributed — [build it from source](#gui) if you want it.
+What each archive contains:
+
+| Platform | CLI tools | GUI |
+|----------|-----------|-----|
+| Linux    | `bin/`    | `perfbuddy-gui-*.AppImage` (self-contained) |
+| macOS    | `bin/`    | `perfbuddy-gui.app` (Qt frameworks bundled) |
+| Windows  | `bin/`    | `bin/perfbuddy-gui.exe` (Qt DLLs alongside) |
+
+> The macOS `.app` and Windows `.exe` are **not code-signed**, so the OS may warn
+> on first launch (right-click → Open on macOS; "More info → Run anyway" on
+> Windows). Build [from source](#gui) to avoid the prompt.
 
 ---
 
