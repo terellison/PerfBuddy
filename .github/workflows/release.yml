@@ -2,13 +2,18 @@ name: Release
 
 # Cut a release by pushing a version tag, e.g.:
 #   git tag -s v0.1.0 -m "PerfBuddy 0.1.0" && git push origin v0.1.0
-# This builds and tests the CLI tools on Linux, macOS, and Windows, then
-# publishes the per-platform archives to a GitHub Release for that tag.
+# This builds and tests on Linux, macOS, and Windows, bundles the Qt runtime
+# with the GUI so it runs without a system Qt install, and publishes the
+# per-platform archives to a GitHub Release for that tag.
+#
+# It can also be run via "Run workflow" (workflow_dispatch) to build and upload
+# the artifacts WITHOUT publishing a release — handy for validating packaging.
 
 on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
 concurrency:
   group: release-${{ github.ref }}
@@ -32,11 +37,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Qt6
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.1'
+          cache: true
+
       - name: Configure
         run: >
           cmake -S . -B build
           -DCMAKE_BUILD_TYPE=Release
-          -DPERFBUDDY_BUILD_GUI=OFF
+          -DPERFBUDDY_BUILD_GUI=ON
           -DPERFBUDDY_BUILD_TESTS=ON
 
       - name: Build
@@ -49,7 +60,58 @@ jobs:
       - name: Stage install tree
         run: cmake --install build --config Release --prefix dist
 
-      # Ship the license and readme alongside the binaries.
+      # ---- Bundle the Qt runtime with the GUI, per platform ----
+
+      - name: Bundle Qt (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          # macdeployqt copies the Qt frameworks/plugins into the .app and
+          # rewrites linkage. Its trailing codesign+verify step fails without a
+          # signing certificate, so tolerate a non-zero exit, then ad-hoc sign
+          # ourselves (required for the app to launch on Apple Silicon) and
+          # assert the frameworks actually landed.
+          macdeployqt dist/perfbuddy-gui.app -verbose=1 || echo "macdeployqt exit $? (codesign step expected to fail unsigned)"
+          codesign --force --deep --sign - dist/perfbuddy-gui.app
+          test -d dist/perfbuddy-gui.app/Contents/Frameworks/QtCore.framework
+
+      - name: Bundle Qt (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          # windeployqt drops the Qt DLLs and plugins next to the .exe in bin/,
+          # so the whole dist/bin folder is self-contained.
+          windeployqt --release --no-translations dist/bin/perfbuddy-gui.exe
+          if (-not (Test-Path dist/bin/Qt6Core.dll)) { throw "windeployqt did not bundle Qt6Core.dll" }
+
+      - name: Bundle Qt (Linux, AppImage)
+        if: runner.os == 'Linux'
+        run: |
+          set -euo pipefail
+          # Headless CI has no FUSE; tell the AppImage tooling to self-extract.
+          export APPIMAGE_EXTRACT_AND_RUN=1
+          # Let linuxdeploy-plugin-qt locate Qt.
+          export QMAKE="$QT_ROOT_DIR/bin/qmake"
+
+          curl -fsSL -o linuxdeploy.AppImage \
+            https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+          curl -fsSL -o linuxdeploy-plugin-qt.AppImage \
+            https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
+          chmod +x linuxdeploy*.AppImage
+
+          ./linuxdeploy.AppImage \
+            --appdir AppDir \
+            --executable dist/bin/perfbuddy-gui \
+            --desktop-file gui/packaging/perfbuddy-gui.desktop \
+            --icon-file gui/packaging/perfbuddy-gui.svg \
+            --plugin qt \
+            --output appimage
+
+          # The self-contained AppImage replaces the bare (Qt-less) GUI binary.
+          rm -f dist/bin/perfbuddy-gui
+          mv PerfBuddy*.AppImage dist/perfbuddy-gui-${{ matrix.platform }}.AppImage
+          test -f dist/perfbuddy-gui-${{ matrix.platform }}.AppImage
+
+      # ---- Ship docs alongside the binaries ----
+
       - name: Add docs (Linux/macOS)
         if: runner.os != 'Windows'
         run: cp README.md LICENSE dist/
@@ -57,6 +119,8 @@ jobs:
       - name: Add docs (Windows)
         if: runner.os == 'Windows'
         run: Copy-Item README.md, LICENSE dist/
+
+      # ---- Package ----
 
       - name: Package (Linux/macOS)
         if: runner.os != 'Windows'
@@ -77,14 +141,43 @@ jobs:
   release:
     name: publish release
     needs: build
+    # Only publish on an actual tag push; workflow_dispatch just builds artifacts.
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
+    # The signing secrets (GPG_PRIVATE_KEY / GPG_PASSPHRASE) live in this
+    # environment; without this line the job can't see them and signing is
+    # silently skipped.
+    environment: default
     permissions:
       contents: write
+    env:
+      # Optional. If set, the artifacts are GPG-signed; if absent, the release
+      # still publishes (unsigned). Prefer exporting a dedicated signing SUBKEY,
+      # base64-encoded, so the master key never reaches CI:
+      #   gpg --export-secret-subkeys <KEYID>! | base64 | pbcopy
+      GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+      GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
     steps:
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
           merge-multiple: true
+
+      # SHA256SUMS covers every archive; signing it once (one .asc) lets users
+      # verify authenticity and integrity of all downloads with two commands.
+      - name: Generate checksums
+        working-directory: artifacts
+        run: sha256sum perfbuddy-* > SHA256SUMS
+
+      - name: Sign checksums (GPG)
+        if: env.GPG_PRIVATE_KEY != ''
+        working-directory: artifacts
+        run: |
+          echo "$GPG_PRIVATE_KEY" | base64 --decode | gpg --batch --import
+          KEY=$(gpg --list-secret-keys --with-colons | awk -F: '/^sec:/ {print $5; exit}')
+          gpg --batch --yes --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" \
+              --local-user "$KEY" --armor --detach-sign --output SHA256SUMS.asc SHA256SUMS
+          gpg --verify SHA256SUMS.asc SHA256SUMS
 
       - name: Create GitHub Release
         env:

@@ -28,17 +28,48 @@ the full design.
 
 ## Download
 
-Prebuilt command-line binaries for **Linux**, **macOS**, and **Windows** are
-attached to every [GitHub Release](https://github.com/terellison/PerfBuddy/releases).
-Grab the archive for your platform, unpack it, and run the tools from `bin/`:
+Prebuilt binaries for **Linux**, **macOS**, and **Windows** are attached to
+every [GitHub Release](https://github.com/terellison/PerfBuddy/releases). Each
+archive bundles the CLI tools **and** the desktop GUI with its Qt runtime, so
+nothing else needs to be installed.
 
 ```bash
 tar -xzf perfbuddy-v0.1.0-linux-x86_64.tar.gz
-./bin/perfbuddy list
+./bin/perfbuddy list                       # CLI
+./perfbuddy-gui-linux-x86_64.AppImage      # GUI
 ```
 
-The release archives contain the CLI tools only. The optional Qt6 GUI is not
-distributed — [build it from source](#gui) if you want it.
+What each archive contains:
+
+| Platform | CLI tools | GUI |
+|----------|-----------|-----|
+| Linux    | `bin/`    | `perfbuddy-gui-*.AppImage` (self-contained) |
+| macOS    | `bin/`    | `perfbuddy-gui.app` (Qt frameworks bundled) |
+| Windows  | `bin/`    | `bin/perfbuddy-gui.exe` (Qt DLLs alongside) |
+
+> The macOS `.app` and Windows `.exe` are **not OS code-signed** (that needs an
+> Apple Developer ID / Authenticode CA certificate), so the OS may warn on first
+> launch (right-click → Open on macOS; "More info → Run anyway" on Windows).
+> Build [from source](#gui) to avoid the prompt.
+
+### Verifying downloads
+
+Each release includes a `SHA256SUMS` file and a detached GPG signature
+`SHA256SUMS.asc`. The signing key is published in [`KEYS`](KEYS) (fingerprint
+`389D 9713 7FEC C48C D783  0470 5916 7CBD 9601 186B`). To confirm a download is
+authentic and intact:
+
+```bash
+# One-time: import the signing key
+gpg --import KEYS                         # or: gpg --recv-keys 389D97137FECC48CD783047059167CBD9601186B
+
+gpg --verify SHA256SUMS.asc SHA256SUMS   # authenticity (good signature?)
+sha256sum -c SHA256SUMS                   # integrity (hashes match?)
+```
+
+OS code-signing and this GPG signature are independent: the GPG signature proves
+the archive came from us untampered, but it does not affect the Gatekeeper /
+SmartScreen prompts above.
 
 ---
 

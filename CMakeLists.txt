@@ -66,9 +66,9 @@ endif()
 # ---------------------------------------------------------------------------
 # Install rules — `cmake --install <build> --prefix <dir>` lays the CLI tools
 # out under <dir>/bin. This is what the release workflow packages into the
-# downloadable archives. The GUI is intentionally excluded: shipping it needs
-# platform-specific Qt deployment (windeployqt / macdeployqt / linuxdeploy),
-# which the CLI archives don't require.
+# downloadable archives. The GUI installs itself (see gui/CMakeLists.txt) when
+# Qt is present; the release workflow then runs the platform Qt deploy tool over
+# the installed result to make it self-contained.
 # ---------------------------------------------------------------------------
 install(TARGETS
           perfbuddy
