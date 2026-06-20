@@ -174,9 +174,10 @@ jobs:
         working-directory: artifacts
         run: |
           echo "$GPG_PRIVATE_KEY" | base64 --decode | gpg --batch --import
-          KEY=$(gpg --list-secret-keys --with-colons | awk -F: '/^sec:/ {print $5; exit}')
+          # Sign with the (only) imported secret key — gpg auto-selects a
+          # signing-capable key, so no fragile key-id parsing is needed.
           gpg --batch --yes --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" \
-              --local-user "$KEY" --armor --detach-sign --output SHA256SUMS.asc SHA256SUMS
+              --armor --detach-sign --output SHA256SUMS.asc SHA256SUMS
           gpg --verify SHA256SUMS.asc SHA256SUMS
 
       - name: Create GitHub Release
