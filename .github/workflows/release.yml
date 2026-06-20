@@ -144,6 +144,10 @@ jobs:
     # Only publish on an actual tag push; workflow_dispatch just builds artifacts.
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
+    # The signing secrets (GPG_PRIVATE_KEY / GPG_PASSPHRASE) live in this
+    # environment; without this line the job can't see them and signing is
+    # silently skipped.
+    environment: default
     permissions:
       contents: write
     env:
