@@ -55,11 +55,13 @@ What each archive contains:
 ### Verifying downloads
 
 Each release includes a `SHA256SUMS` file and a detached GPG signature
-`SHA256SUMS.asc`. To confirm a download is authentic and intact:
+`SHA256SUMS.asc`. The signing key is published in [`KEYS`](KEYS) (fingerprint
+`389D 9713 7FEC C48C D783  0470 5916 7CBD 9601 186B`). To confirm a download is
+authentic and intact:
 
 ```bash
-# One-time: import the signing key (fingerprint published on the Releases page)
-gpg --recv-keys 389D97137FECC48CD783047059167CBD9601186B
+# One-time: import the signing key
+gpg --import KEYS                         # or: gpg --recv-keys 389D97137FECC48CD783047059167CBD9601186B
 
 gpg --verify SHA256SUMS.asc SHA256SUMS   # authenticity (good signature?)
 sha256sum -c SHA256SUMS                   # integrity (hashes match?)
