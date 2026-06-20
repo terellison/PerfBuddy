@@ -47,9 +47,27 @@ What each archive contains:
 | macOS    | `bin/`    | `perfbuddy-gui.app` (Qt frameworks bundled) |
 | Windows  | `bin/`    | `bin/perfbuddy-gui.exe` (Qt DLLs alongside) |
 
-> The macOS `.app` and Windows `.exe` are **not code-signed**, so the OS may warn
-> on first launch (right-click → Open on macOS; "More info → Run anyway" on
-> Windows). Build [from source](#gui) to avoid the prompt.
+> The macOS `.app` and Windows `.exe` are **not OS code-signed** (that needs an
+> Apple Developer ID / Authenticode CA certificate), so the OS may warn on first
+> launch (right-click → Open on macOS; "More info → Run anyway" on Windows).
+> Build [from source](#gui) to avoid the prompt.
+
+### Verifying downloads
+
+Each release includes a `SHA256SUMS` file and a detached GPG signature
+`SHA256SUMS.asc`. To confirm a download is authentic and intact:
+
+```bash
+# One-time: import the signing key (fingerprint published on the Releases page)
+gpg --recv-keys 389D97137FECC48CD783047059167CBD9601186B
+
+gpg --verify SHA256SUMS.asc SHA256SUMS   # authenticity (good signature?)
+sha256sum -c SHA256SUMS                   # integrity (hashes match?)
+```
+
+OS code-signing and this GPG signature are independent: the GPG signature proves
+the archive came from us untampered, but it does not affect the Gatekeeper /
+SmartScreen prompts above.
 
 ---
 

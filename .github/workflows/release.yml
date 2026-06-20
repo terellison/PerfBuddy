@@ -146,11 +146,34 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      # Optional. If set, the artifacts are GPG-signed; if absent, the release
+      # still publishes (unsigned). Prefer exporting a dedicated signing SUBKEY,
+      # base64-encoded, so the master key never reaches CI:
+      #   gpg --export-secret-subkeys <KEYID>! | base64 | pbcopy
+      GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+      GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
     steps:
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
           merge-multiple: true
+
+      # SHA256SUMS covers every archive; signing it once (one .asc) lets users
+      # verify authenticity and integrity of all downloads with two commands.
+      - name: Generate checksums
+        working-directory: artifacts
+        run: sha256sum perfbuddy-* > SHA256SUMS
+
+      - name: Sign checksums (GPG)
+        if: env.GPG_PRIVATE_KEY != ''
+        working-directory: artifacts
+        run: |
+          echo "$GPG_PRIVATE_KEY" | base64 --decode | gpg --batch --import
+          KEY=$(gpg --list-secret-keys --with-colons | awk -F: '/^sec:/ {print $5; exit}')
+          gpg --batch --yes --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" \
+              --local-user "$KEY" --armor --detach-sign --output SHA256SUMS.asc SHA256SUMS
+          gpg --verify SHA256SUMS.asc SHA256SUMS
 
       - name: Create GitHub Release
         env:
