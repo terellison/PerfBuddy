@@ -86,6 +86,7 @@ struct Target {
   std::optional<std::string> executable;  // built game binary
   std::optional<std::string> source_dir;  // codebase root
   std::optional<std::string> data_dir;    // profiles / alloc logs / cooked assets
+  std::optional<std::string> rules_file;  // .editorconfig-style rule severity overrides
   Engine engine = Engine::Unknown;
   std::string label;                      // human label for reports
 

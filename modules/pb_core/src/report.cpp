@@ -89,6 +89,7 @@ void print_help(const Analyzer& a, const std::string& prog) {
       << "  --src <dir>       path to the source/codebase root\n"
       << "  --data <dir>      path to profiling / allocation / asset inputs\n"
       << "  --engine <name>   native | unreal | unknown (default: auto-detect)\n"
+      << "  --rules <file>    .editorconfig-style rule severity overrides\n"
       << "  --format <fmt>    text | json (default: text)\n"
       << "  --output <file>   write to a file instead of stdout\n"
       << "  --help            show this help\n";
@@ -114,6 +115,7 @@ int run_module_cli(Analyzer& analyzer, int argc, char** argv) {
   if (auto v = args.get("src")) t.source_dir = *v;
   if (auto v = args.get("data")) t.data_dir = *v;
   if (auto v = args.get("engine")) t.engine = engine_from_string(*v);
+  if (auto v = args.get("rules")) t.rules_file = *v;
   t.engine = Target::detect_engine(t);
   t.label = t.executable.value_or(t.source_dir.value_or(t.data_dir.value_or("target")));
 

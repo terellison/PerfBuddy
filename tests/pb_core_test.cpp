@@ -2,6 +2,7 @@
 #include "test_fixture.hpp"
 
 #include "pb_core/json.hpp"
+#include "pb_core/ruleset.hpp"
 #include "pb_core/types.hpp"
 #include "pb_core/util.hpp"
 
@@ -186,6 +187,60 @@ TEST("util: Args parses flags, key=value, key value, and positionals") {
   CHECK(!args.has("missing"));
   CHECK_EQ(args.positionals().size(), 1u);
   CHECK_EQ(args.positionals()[0], "pos1");
+}
+
+// ---- ruleset ----
+
+TEST("ruleset: missing file fails but leaves rules at their default") {
+  RuleSettings r = RuleSettings::load("/this/path/does/not/exist.ini");
+  CHECK(r.failed());
+  CHECK(r.is_enabled("anything.at_all"));
+  CHECK(r.effective_severity("anything.at_all", Severity::Low) == Severity::Low);
+}
+
+TEST("ruleset: severity = none disables a rule") {
+  TempDir dir;
+  auto path = dir.write("rules.ini", "[code.endl_flush]\nseverity = none\n");
+  RuleSettings r = RuleSettings::load(path);
+  CHECK(!r.failed());
+  CHECK(!r.is_enabled("code.endl_flush"));
+  CHECK(r.is_enabled("code.oversized_tu"));
+}
+
+TEST("ruleset: severity = <level> overrides effective_severity") {
+  TempDir dir;
+  auto path = dir.write("rules.ini", "[code.oversized_tu]\nseverity = high\n");
+  RuleSettings r = RuleSettings::load(path);
+  CHECK(r.is_enabled("code.oversized_tu"));
+  CHECK(r.effective_severity("code.oversized_tu", Severity::Low) == Severity::High);
+  // Unmentioned rules pass through unchanged.
+  CHECK(r.effective_severity("code.deep_nesting", Severity::Low) == Severity::Low);
+}
+
+TEST("ruleset: enabled = false disables without specifying severity") {
+  TempDir dir;
+  auto path = dir.write("rules.ini", "[code.tech_debt_markers]\nenabled = false\n");
+  RuleSettings r = RuleSettings::load(path);
+  CHECK(!r.is_enabled("code.tech_debt_markers"));
+}
+
+TEST("ruleset: a trailing inline comment after a value is stripped") {
+  TempDir dir;
+  auto path = dir.write("rules.ini",
+                        "[code.endl_flush]\nseverity = none   ; why we disabled it\n");
+  RuleSettings r = RuleSettings::load(path);
+  CHECK(!r.failed());
+  CHECK(!r.is_enabled("code.endl_flush"));
+}
+
+TEST("ruleset: comments and blank lines are ignored") {
+  TempDir dir;
+  auto path = dir.write("rules.ini",
+                        "; a comment\n\n# another comment\n[code.endl_flush]\n"
+                        "severity = none\n");
+  RuleSettings r = RuleSettings::load(path);
+  CHECK(!r.failed());
+  CHECK(!r.is_enabled("code.endl_flush"));
 }
 
 PB_TEST_MAIN()

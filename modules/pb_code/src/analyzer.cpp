@@ -4,6 +4,7 @@
 #include <chrono>
 #include <sstream>
 
+#include "pb_core/ruleset.hpp"
 #include "pb_core/util.hpp"
 
 namespace pb::code {
@@ -155,7 +156,28 @@ ModuleReport CodeAnalyzer::analyze(const Target& t) const {
   report.summary["lines"] = static_cast<double>(total_lines);
   report.summary["todos"] = static_cast<double>(total.todos);
 
-  auto add = [&](Finding f) { report.findings.push_back(std::move(f)); };
+  RuleSettings rules;
+  if (t.rules_file) rules = RuleSettings::load(*t.rules_file);
+
+  // Drops findings disabled via the rules file and applies any severity
+  // override; rule ids that aren't mentioned in the file pass through as-is.
+  auto add = [&](Finding f) {
+    if (!rules.is_enabled(f.id)) return;
+    f.severity = rules.effective_severity(f.id, f.severity);
+    report.findings.push_back(std::move(f));
+  };
+
+  if (t.rules_file && rules.failed()) {
+    Finding f;
+    f.id = "code.rules_file_error";
+    f.category = Category::CodeQuality;
+    f.severity = Severity::Info;
+    f.title = "Could not load rules file: " + *t.rules_file;
+    f.description = rules.error();
+    f.impact = "Falling back to default severities for every rule below.";
+    f.remediation = "Check the path and .editorconfig-style syntax (see README).";
+    add(std::move(f));
+  }
 
   // Overview.
   {
