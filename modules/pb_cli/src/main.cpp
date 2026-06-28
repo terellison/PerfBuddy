@@ -21,6 +21,7 @@ void print_help(const std::string& prog) {
       << "  --src <dir>       source / codebase root        (pb_code, pb_unreal)\n"
       << "  --data <dir>      profiles / alloc logs / assets (pb_runtime, pb_memory, pb_unreal)\n"
       << "  --engine <name>   native | unreal | unknown      (default: auto-detect)\n"
+      << "  --rules <file>    .editorconfig-style rule severity overrides (pb_code)\n"
       << "  --only <a,b,...>  restrict to named modules (e.g. pb_binary,pb_code)\n"
       << "  --format <fmt>    text | json                   (default: text)\n"
       << "  --output <file>   write report to a file instead of stdout\n"
@@ -49,6 +50,7 @@ int cmd_run(const util::Args& args) {
   if (auto v = args.get("src")) t.source_dir = *v;
   if (auto v = args.get("data")) t.data_dir = *v;
   if (auto v = args.get("engine")) t.engine = engine_from_string(*v);
+  if (auto v = args.get("rules")) t.rules_file = *v;
   t.label = t.executable.value_or(t.source_dir.value_or(t.data_dir.value_or("target")));
 
   if (!t.executable && !t.source_dir && !t.data_dir) {

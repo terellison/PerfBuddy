@@ -168,6 +168,32 @@ gates). Every finding carries a severity, the location, why it matters
 
 ---
 
+## Configuring rules
+
+`pb_code` (and any future module that opts in) reads an `.editorconfig`-style
+file passed via `--rules <file>` to disable individual findings or override
+their severity:
+
+```ini
+# pbrules.ini
+[code.endl_flush]
+severity = none          ; disable this rule entirely
+
+[code.oversized_tu]
+severity = high           ; info | low | medium | high | critical
+```
+
+Section names are `Finding::id` values (e.g. `code.oversized_tu`, see the list
+in `ARCHITECTURE.md`); rules not mentioned keep their built-in default
+severity. Comments start with `#` or `;`.
+
+```bash
+./build/modules/pb_cli/perfbuddy run --src ./src --only pb_code --rules pbrules.ini
+./build/modules/pb_code/pb-code --src ./src --rules pbrules.ini
+```
+
+---
+
 ## GUI
 
 `perfbuddy-gui` (built when Qt6 is available) lets you pick the executable,

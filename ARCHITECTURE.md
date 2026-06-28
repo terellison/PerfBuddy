@@ -99,6 +99,7 @@ struct Target {
   std::optional<std::string> executable; // built game binary
   std::optional<std::string> source_dir; // codebase root
   std::optional<std::string> data_dir;   // profiles / alloc logs / cooked assets
+  std::optional<std::string> rules_file; // rule severity overrides (see RuleSettings)
   Engine engine;                         // Native | Unreal | Unknown (auto-detected)
 };
 
@@ -114,6 +115,14 @@ class Analyzer {
 Everything serializes to JSON via a small built-in `pb::json` value type, so any
 module's output is consumable by the GUI, by CI, or by other tooling without
 coupling and without external libraries.
+
+`pb_core` also offers an opt-in `RuleSettings` helper
+(`pb_core/ruleset.hpp`) that parses an `.editorconfig`-style file —
+`[finding.id]` sections with a `severity = info|low|medium|high|critical|none`
+key — so users can disable or re-rank individual findings without touching
+code. It's loaded from `Target::rules_file` (set via `--rules <file>` on any
+CLI); `pb_code` is the first module to honor it, applying overrides to every
+`Finding` it emits before returning its `ModuleReport`.
 
 ---
 
